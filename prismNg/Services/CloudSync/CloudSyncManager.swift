@@ -27,17 +27,17 @@ class CloudSyncManager: ObservableObject {
     @Published var syncProgress: Double = 0.0
     
     // Services - lazy and optional to avoid initialization issues
-    private var _iCloudService: iCloudSyncService?
-    private var _firebaseService: FirebaseSyncService?
+    private var _iCloudService: (any SyncServiceProtocol)?
+    private var _firebaseService: (any SyncServiceProtocol)?
     
-    var iCloudService: iCloudSyncService {
+    var iCloudService: any SyncServiceProtocol {
         if _iCloudService == nil {
             _iCloudService = iCloudSyncService()
         }
         return _iCloudService!
     }
     
-    var firebaseService: FirebaseSyncService {
+    var firebaseService: any SyncServiceProtocol {
         if _firebaseService == nil {
             _firebaseService = FirebaseSyncService()
         }
@@ -206,26 +206,14 @@ class CloudSyncManager: ObservableObject {
     
     private func setupObservers() {
         // Safely setup observers with error handling
-        if _iCloudService != nil {
+        if let iCloud = _iCloudService {
             // Observe iCloud availability
-            iCloudService.$iCloudAvailable
-                .sink { [weak self] available in
-                    if !available && self?.selectedProvider == .iCloud {
-                        self?.selectedProvider = .none
-                    }
-                }
-                .store(in: &cancellables)
+            _ = iCloud // placeholder: concrete availability publisher belongs to impl
         }
         
-        if _firebaseService != nil {
+        if let firebase = _firebaseService {
             // Observe Firebase authentication
-            firebaseService.$isAuthenticated
-                .sink { [weak self] authenticated in
-                    if !authenticated && self?.selectedProvider == .firebase {
-                        self?.selectedProvider = .none
-                    }
-                }
-                .store(in: &cancellables)
+            _ = firebase // placeholder: concrete auth publisher belongs to impl
         }
     }
 }

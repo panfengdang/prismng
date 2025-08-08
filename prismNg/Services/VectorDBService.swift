@@ -23,7 +23,11 @@ class VectorDBService: VectorDBServiceProtocol {
     // MARK: - Properties
     internal var vectorStore: [UUID: [Float]] = [:]
     internal let queue = DispatchQueue(label: "vector-db-queue", qos: .utility)
-    private let persistenceKey = "VectorStore"
+    private let persistenceKey = "VectorStore" // legacy key (for migration)
+    private let persistenceURL: URL = {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return dir.appendingPathComponent("vector_store.json")
+    }()
     
     // MARK: - Initialization
     init() {
@@ -155,33 +159,38 @@ class VectorDBService: VectorDBServiceProtocol {
     private func loadVectorStore() {
         queue.async { [weak self] in
             guard let self = self else { return }
-            
+            // Prefer file-based persistence
+            if let data = try? Data(contentsOf: self.persistenceURL),
+               let decoded = try? JSONDecoder().decode([String: [Float]].self, from: data) {
+                for (uuidString, vector) in decoded {
+                    if let uuid = UUID(uuidString: uuidString) { self.vectorStore[uuid] = vector }
+                }
+                return
+            }
+            // Legacy migration from UserDefaults
             if let data = UserDefaults.standard.data(forKey: self.persistenceKey),
                let decoded = try? JSONDecoder().decode([String: [Float]].self, from: data) {
-                
-                // Convert string keys back to UUIDs
                 for (uuidString, vector) in decoded {
-                    if let uuid = UUID(uuidString: uuidString) {
-                        self.vectorStore[uuid] = vector
-                    }
+                    if let uuid = UUID(uuidString: uuidString) { self.vectorStore[uuid] = vector }
                 }
+                // write to file then clear old storage
+                self.writeCurrentStoreToDisk()
+                UserDefaults.standard.removeObject(forKey: self.persistenceKey)
             }
         }
     }
     
-    private func saveVectorStore() {
+    private func saveVectorStore() { writeCurrentStoreToDisk() }
+
+    private func writeCurrentStoreToDisk() {
         queue.async { [weak self] in
             guard let self = self else { return }
-            
-            // Convert UUID keys to strings for JSON serialization
-            let stringKeyedStore = Dictionary(
-                uniqueKeysWithValues: self.vectorStore.map { (key, value) in
-                    (key.uuidString, value)
-                }
-            )
-            
-            if let encoded = try? JSONEncoder().encode(stringKeyedStore) {
-                UserDefaults.standard.set(encoded, forKey: self.persistenceKey)
+            let stringKeyedStore = Dictionary(uniqueKeysWithValues: self.vectorStore.map { ($0.key.uuidString, $0.value) })
+            do {
+                let data = try JSONEncoder().encode(stringKeyedStore)
+                try data.write(to: self.persistenceURL, options: .atomic)
+            } catch {
+                AppLogger.log("Vector store persist error: \(error.localizedDescription)", category: .ai, type: .error)
             }
         }
     }

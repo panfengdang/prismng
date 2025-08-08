@@ -23,14 +23,17 @@ class AIService: AIServiceProtocol {
     private let localEmbeddingService: LocalEmbeddingService
     private let llmService: RealLLMService
     private let configService: AIConfigurationService
+    private let router: AIRequestRouter
     private let useMockResponses: Bool
     
     // MARK: - Initialization
-    init(useMockResponses: Bool = false) {
+    init(useMockResponses: Bool = false, quotaService: QuotaManagementService? = nil) {
         self.localEmbeddingService = LocalEmbeddingService()
         self.llmService = RealLLMService()
         self.configService = AIConfigurationService()
         self.useMockResponses = useMockResponses
+        let quota = quotaService ?? QuotaManagementService()
+        self.router = AIRequestRouter(quotaService: quota)
         
         // Check if API key is available
         if ProcessInfo.processInfo.environment["OPENAI_API_KEY"] == nil && !useMockResponses {
@@ -61,11 +64,21 @@ class AIService: AIServiceProtocol {
         }
         
         do {
-            let analysisResponse = try await llmService.analyzeStructure(prompt: prompt)
-            return convertToStructureAnalysis(analysisResponse, centerNode: centerNode, relatedNodes: relatedNodes)
+            switch router.decideBackend(for: .analysis, nodeCount: 1 + relatedNodes.count) {
+            case .cloudProxy:
+                // Defer to cloud via FirebaseFunctionsAIService bridge if needed (handled by HybridAIService normally)
+                // Here, keep LLM path as fallback for BYOK; primary cloud route sits in HybridAIService
+                let analysisResponse = try await llmService.analyzeStructure(prompt: prompt)
+                return convertToStructureAnalysis(analysisResponse, centerNode: centerNode, relatedNodes: relatedNodes)
+            case .byok:
+                let analysisResponse = try await llmService.analyzeStructure(prompt: prompt)
+                return convertToStructureAnalysis(analysisResponse, centerNode: centerNode, relatedNodes: relatedNodes)
+            case .mock:
+                let response = mockStructureAnalysisResponse()
+                return try parseStructureAnalysis(response: response, centerNode: centerNode, relatedNodes: relatedNodes)
+            }
         } catch {
-            // Fallback to mock if real API fails
-            print("AI Service failed, using fallback: \(error)")
+            AppLogger.log("AIService analyze fallback: \(error.localizedDescription)", category: .ai, type: .error)
             let response = mockStructureAnalysisResponse()
             return try parseStructureAnalysis(response: response, centerNode: centerNode, relatedNodes: relatedNodes)
         }
