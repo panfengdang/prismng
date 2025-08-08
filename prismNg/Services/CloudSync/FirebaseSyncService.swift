@@ -44,7 +44,6 @@ class FirebaseSyncService: ObservableObject, SyncServiceProtocol {
     @Published var syncStatus: SyncStatus = .idle
     @Published var lastSyncDate: Date?
     @Published var pendingChanges: Int = 0
-    @Published var isAuthenticated: Bool = false
     
     private var configuration = SyncConfiguration.default
     private var syncTimer: Timer?

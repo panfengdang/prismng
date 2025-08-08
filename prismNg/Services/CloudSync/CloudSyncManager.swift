@@ -27,17 +27,17 @@ class CloudSyncManager: ObservableObject {
     @Published var syncProgress: Double = 0.0
     
     // Services - lazy and optional to avoid initialization issues
-    private var _iCloudService: (any SyncServiceProtocol)?
-    private var _firebaseService: (any SyncServiceProtocol)?
+    private var _iCloudService: iCloudSyncService?
+    private var _firebaseService: FirebaseSyncService?
     
-    var iCloudService: any SyncServiceProtocol {
+    var iCloudService: iCloudSyncService {
         if _iCloudService == nil {
             _iCloudService = iCloudSyncService()
         }
         return _iCloudService!
     }
     
-    var firebaseService: any SyncServiceProtocol {
+    var firebaseService: FirebaseSyncService {
         if _firebaseService == nil {
             _firebaseService = FirebaseSyncService()
         }
@@ -89,7 +89,7 @@ class CloudSyncManager: ObservableObject {
         
         if shouldSyncToiCloud {
             do {
-                try await iCloudService.syncThoughtNode(node)
+                try await iCloudService.syncNode(node)
             } catch {
                 lastSyncError = error
                 hasError = true
@@ -154,7 +154,7 @@ class CloudSyncManager: ObservableObject {
             // Upload new or updated nodes
             for node in nodes {
                 if !remoteNodeIds.contains(node.id) {
-                    try await iCloudService.syncThoughtNode(node)
+                    try await iCloudService.syncNode(node)
                 }
                 completed += 1
                 syncProgress = Double(completed) / Double(totalNodes * 2)
