@@ -1,0 +1,1205 @@
+//
+//  ModernCanvasView.swift
+//  prismNg
+//
+//  Miro-inspired modern canvas with beautiful UI/UX
+//
+
+import SwiftUI
+import SwiftData
+
+struct ModernCanvasView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Query private var thoughtNodes: [ThoughtNode]
+    @Query private var connections: [NodeConnection]
+    
+    // Canvas State
+    @State private var canvasOffset = CGSize.zero
+    @State private var canvasScale: CGFloat = 1.0
+    @State private var selectedNodes: Set<ThoughtNode> = []
+    @State private var hoveredNode: ThoughtNode?
+    
+    // Interaction States
+    @State private var currentTool: CanvasTool = .select
+    @State private var isDragging = false
+    @State private var dragStartLocation = CGPoint.zero
+    @State private var selectionRect: CGRect?
+    
+    // AI States
+    @State private var cognitiveGear: CognitiveGear = .capture
+    @State private var driftModeActive = false
+    @State private var showAIPanel = false
+    @State private var aiSuggestions: [AISuggestion] = []
+    
+    // UI States
+    @State private var showToolbar = true
+    @State private var showMinimap = true
+    @State private var showSearch = false
+    @State private var searchQuery = ""
+    
+    // Animation States
+    @State private var pulseAnimation = false
+    @State private var resonanceConnections: Set<String> = []
+    
+    enum CanvasTool: String, CaseIterable {
+        case select = "arrow.up.left"
+        case pan = "hand.draw"
+        case connect = "link"
+        case text = "text.cursor"
+        case sticky = "note"
+        case shape = "square.on.circle"
+        
+        var label: String {
+            switch self {
+            case .select: return "选择"
+            case .pan: return "平移"
+            case .connect: return "连接"
+            case .text: return "文本"
+            case .sticky: return "便签"
+            case .shape: return "形状"
+            }
+        }
+    }
+    
+    var body: some View {
+        ZStack {
+            // Background with gradient
+            canvasBackground
+            
+            // Main Canvas
+            GeometryReader { geometry in
+                ZStack {
+                    // Grid Pattern
+                    modernGrid
+                        .scaleEffect(canvasScale)
+                        .offset(canvasOffset)
+                    
+                    // Connections Layer
+                    ForEach(connections) { connection in
+                        if let fromNode = thoughtNodes.first(where: { $0.id == connection.fromNodeId }),
+                           let toNode = thoughtNodes.first(where: { $0.id == connection.toNodeId }) {
+                            ModernConnectionLine(
+                                from: nodePosition(fromNode, in: geometry),
+                                to: nodePosition(toNode, in: geometry),
+                                type: connection.connectionType,
+                                isResonating: resonanceConnections.contains(connection.id.uuidString),
+                                scale: canvasScale
+                            )
+                        }
+                    }
+                    
+                    // Nodes Layer
+                    ForEach(thoughtNodes) { node in
+                        ModernNodeView(
+                            node: node,
+                            isSelected: selectedNodes.contains(node),
+                            isHovered: hoveredNode == node,
+                            cognitiveGear: cognitiveGear,
+                            scale: canvasScale,
+                            onTap: { handleNodeTap(node) },
+                            onDoubleTap: { handleNodeDoubleTap(node) },
+                            onDrag: { offset in handleNodeDrag(node, offset: offset) }
+                        )
+                        .position(nodePosition(node, in: geometry))
+                        .scaleEffect(canvasScale)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: node.position)
+                    }
+                    
+                    // Selection Rectangle
+                    if let rect = selectionRect {
+                        Rectangle()
+                            .fill(Color.blue.opacity(0.1))
+                            .overlay(
+                                Rectangle()
+                                    .stroke(Color.blue, lineWidth: 1)
+                            )
+                            .frame(width: rect.width, height: rect.height)
+                            .position(x: rect.midX, y: rect.midY)
+                    }
+                }
+                .contentShape(Rectangle())
+                .gesture(canvasGestures)
+            }
+            
+            // UI Overlays
+            VStack {
+                // Top Toolbar
+                if showToolbar {
+                    ModernToolbar(
+                        currentTool: $currentTool,
+                        cognitiveGear: $cognitiveGear,
+                        driftModeActive: $driftModeActive,
+                        onSearch: { showSearch.toggle() },
+                        onAI: { showAIPanel.toggle() }
+                    )
+                    .transition(.move(edge: .top))
+                }
+                
+                Spacer()
+                
+                // Bottom Controls
+                HStack {
+                    // Minimap
+                    if showMinimap {
+                        MinimapView(
+                            nodes: thoughtNodes,
+                            connections: connections,
+                            viewportOffset: canvasOffset,
+                            viewportScale: canvasScale
+                        )
+                        .frame(width: 200, height: 150)
+                        .transition(.move(edge: .leading))
+                    }
+                    
+                    Spacer()
+                    
+                    // Zoom Controls
+                    ZoomControls(
+                        scale: $canvasScale,
+                        onReset: resetCanvas
+                    )
+                }
+                .padding()
+            }
+            
+            // AI Panel
+            if showAIPanel {
+                AIAssistantPanel(
+                    nodes: thoughtNodes,
+                    suggestions: $aiSuggestions,
+                    onClose: { showAIPanel = false }
+                )
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+            
+            // Search Overlay
+            if showSearch {
+                SearchOverlay(
+                    query: $searchQuery,
+                    nodes: thoughtNodes,
+                    onSelect: { node in
+                        focusOnNode(node)
+                        showSearch = false
+                    },
+                    onClose: { showSearch = false }
+                )
+                .transition(.opacity)
+            }
+        }
+        .background(Color("CanvasBackground"))
+        .onAppear {
+            setupCanvas()
+            if driftModeActive {
+                startDriftMode()
+            }
+        }
+    }
+    
+    // MARK: - Subviews
+    
+    private var canvasBackground: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(hex: "F5F7FA"),
+                Color(hex: "E9ECEF")
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
+    private var modernGrid: some View {
+        GeometryReader { geometry in
+            Path { path in
+                let gridSize: CGFloat = 40
+                let width = geometry.size.width * 3
+                let height = geometry.size.height * 3
+                
+                // Vertical lines
+                for x in stride(from: -width, through: width, by: gridSize) {
+                    path.move(to: CGPoint(x: x, y: -height))
+                    path.addLine(to: CGPoint(x: x, y: height))
+                }
+                
+                // Horizontal lines
+                for y in stride(from: -height, through: height, by: gridSize) {
+                    path.move(to: CGPoint(x: -width, y: y))
+                    path.addLine(to: CGPoint(x: width, y: y))
+                }
+            }
+            .stroke(Color.gray.opacity(0.1), lineWidth: 0.5)
+        }
+    }
+    
+    // MARK: - Gestures
+    
+    private var canvasGestures: some Gesture {
+        let drag = DragGesture()
+            .onChanged { value in
+                handleDragGesture(value)
+            }
+            .onEnded { _ in
+                isDragging = false
+                selectionRect = nil
+            }
+        
+        let magnification = MagnificationGesture()
+            .onChanged { value in
+                canvasScale = max(0.5, min(3.0, value))
+            }
+        
+        let tap = TapGesture(count: 2)
+            .onEnded {
+                createNodeAtCenter()
+            }
+        
+        return drag.simultaneously(with: magnification).exclusively(before: tap)
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func nodePosition(_ node: ThoughtNode, in geometry: GeometryProxy) -> CGPoint {
+        CGPoint(
+            x: node.position.x * canvasScale + canvasOffset.width + geometry.size.width / 2,
+            y: node.position.y * canvasScale + canvasOffset.height + geometry.size.height / 2
+        )
+    }
+    
+    private func handleDragGesture(_ value: DragGesture.Value) {
+        switch currentTool {
+        case .select:
+            if !isDragging {
+                isDragging = true
+                dragStartLocation = value.startLocation
+            }
+            selectionRect = CGRect(
+                x: min(dragStartLocation.x, value.location.x),
+                y: min(dragStartLocation.y, value.location.y),
+                width: abs(value.location.x - dragStartLocation.x),
+                height: abs(value.location.y - dragStartLocation.y)
+            )
+            updateSelection()
+            
+        case .pan:
+            canvasOffset = CGSize(
+                width: value.translation.width,
+                height: value.translation.height
+            )
+            
+        default:
+            break
+        }
+    }
+    
+    private func handleNodeTap(_ node: ThoughtNode) {
+        switch currentTool {
+        case .select:
+            if selectedNodes.contains(node) {
+                selectedNodes.remove(node)
+            } else {
+                selectedNodes.insert(node)
+            }
+        case .connect:
+            // Handle connection creation
+            break
+        default:
+            break
+        }
+    }
+    
+    private func handleNodeDoubleTap(_ node: ThoughtNode) {
+        // Open node editor
+    }
+    
+    private func handleNodeDrag(_ node: ThoughtNode, offset: CGSize) {
+        node.position.x += offset.width / canvasScale
+        node.position.y += offset.height / canvasScale
+        try? modelContext.save()
+    }
+    
+    private func updateSelection() {
+        guard let rect = selectionRect else { return }
+        // Update selected nodes based on selection rectangle
+    }
+    
+    private func createNodeAtCenter() {
+        let node = ThoughtNode(
+            content: "新想法",
+            nodeType: .thought,
+            position: Position(x: 0, y: 0)
+        )
+        modelContext.insert(node)
+        try? modelContext.save()
+    }
+    
+    private func focusOnNode(_ node: ThoughtNode) {
+        withAnimation(.spring()) {
+            canvasOffset = CGSize(
+                width: -node.position.x * canvasScale,
+                height: -node.position.y * canvasScale
+            )
+            selectedNodes = [node]
+        }
+    }
+    
+    private func resetCanvas() {
+        withAnimation(.spring()) {
+            canvasOffset = .zero
+            canvasScale = 1.0
+        }
+    }
+    
+    private func setupCanvas() {
+        // Initial setup
+    }
+    
+    private func startDriftMode() {
+        // Implement drift mode animation
+        Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            if driftModeActive {
+                // Add subtle movement to nodes
+                for node in thoughtNodes {
+                    let dx = Double.random(in: -0.5...0.5)
+                    let dy = Double.random(in: -0.5...0.5)
+                    node.position.x += dx
+                    node.position.y += dy
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Supporting Views
+
+struct ModernNodeView: View {
+    let node: ThoughtNode
+    let isSelected: Bool
+    let isHovered: Bool
+    let cognitiveGear: CognitiveGear
+    let scale: CGFloat
+    let onTap: () -> Void
+    let onDoubleTap: () -> Void
+    let onDrag: (CGSize) -> Void
+    
+    @State private var dragOffset = CGSize.zero
+    @State private var isPulsing = false
+    
+    var body: some View {
+        ZStack {
+            // Shadow and glow effects
+            if isSelected {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.blue.opacity(0.1))
+                    .blur(radius: 8)
+                    .scaleEffect(isPulsing ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 1.5).repeatForever(), value: isPulsing)
+            }
+            
+            // Main node body
+            VStack(alignment: .leading, spacing: 8) {
+                // Node type indicator
+                HStack {
+                    Image(systemName: node.nodeType.icon)
+                        .font(.caption)
+                        .foregroundColor(node.nodeType.color)
+                    
+                    Spacer()
+                    
+                    if let emotionalTag = node.emotionalTag {
+                        EmotionIndicator(emotion: emotionalTag)
+                    }
+                }
+                
+                // Content
+                Text(node.content)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+                    .lineLimit(4)
+                    .multilineTextAlignment(.leading)
+                
+                // Metadata
+                HStack {
+                    Text(node.createdAt.formatted(date: .omitted, time: .shortened))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    if node.importance > 0.7 {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+                            .foregroundColor(.yellow)
+                    }
+                }
+            }
+            .padding(12)
+            .frame(width: 200)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white)
+                    .shadow(
+                        color: isSelected ? Color.blue.opacity(0.3) : Color.black.opacity(0.1),
+                        radius: isSelected ? 8 : 4,
+                        x: 0,
+                        y: 2
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        isSelected ? Color.blue : Color.clear,
+                        lineWidth: 2
+                    )
+            )
+        }
+        .offset(dragOffset)
+        .scaleEffect(isHovered ? 1.05 : 1.0)
+        .animation(.spring(response: 0.3), value: isHovered)
+        .onTapGesture(perform: onTap)
+        .onTapGesture(count: 2, perform: onDoubleTap)
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    dragOffset = value.translation
+                }
+                .onEnded { value in
+                    onDrag(value.translation)
+                    dragOffset = .zero
+                }
+        )
+        .onAppear {
+            if isSelected {
+                isPulsing = true
+            }
+        }
+    }
+}
+
+struct ModernConnectionLine: View {
+    let from: CGPoint
+    let to: CGPoint
+    let type: ConnectionType
+    let isResonating: Bool
+    let scale: CGFloat
+    
+    var body: some View {
+        Path { path in
+            path.move(to: from)
+            
+            // Create smooth bezier curve
+            let controlPoint1 = CGPoint(
+                x: from.x + (to.x - from.x) * 0.5,
+                y: from.y
+            )
+            let controlPoint2 = CGPoint(
+                x: from.x + (to.x - from.x) * 0.5,
+                y: to.y
+            )
+            
+            path.addCurve(
+                to: to,
+                control1: controlPoint1,
+                control2: controlPoint2
+            )
+        }
+        .stroke(
+            isResonating ? 
+                LinearGradient(
+                    colors: [Color.yellow, Color.orange],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ) :
+                LinearGradient(
+                    colors: [type.color.opacity(0.6), type.color],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ),
+            style: StrokeStyle(
+                lineWidth: isResonating ? 3 : 2,
+                lineCap: .round,
+                lineJoin: .round,
+                dash: type == .weakAssociation ? [5, 5] : []
+            )
+        )
+        .animation(.easeInOut(duration: 0.5), value: isResonating)
+    }
+}
+
+struct ModernToolbar: View {
+    @Binding var currentTool: ModernCanvasView.CanvasTool
+    @Binding var cognitiveGear: CognitiveGear
+    @Binding var driftModeActive: Bool
+    let onSearch: () -> Void
+    let onAI: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 20) {
+            // Tool Selection
+            HStack(spacing: 2) {
+                ForEach(ModernCanvasView.CanvasTool.allCases, id: \.self) { tool in
+                    ToolButton(
+                        icon: tool.rawValue,
+                        label: tool.label,
+                        isSelected: currentTool == tool,
+                        action: { currentTool = tool }
+                    )
+                }
+            }
+            .padding(4)
+            .background(Color.white)
+            .cornerRadius(10)
+            .shadow(radius: 2)
+            
+            Divider()
+                .frame(height: 30)
+            
+            // Cognitive Gear Selector
+            CognitiveGearSelector(
+                currentGear: $cognitiveGear,
+                driftModeActive: $driftModeActive
+            )
+            
+            Spacer()
+            
+            // Action Buttons
+            HStack(spacing: 12) {
+                ModernActionButton(
+                    icon: "magnifyingglass",
+                    label: "搜索",
+                    action: onSearch
+                )
+                
+                ModernActionButton(
+                    icon: "sparkles",
+                    label: "AI助手",
+                    action: onAI
+                )
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            Color.white.opacity(0.95)
+                .background(.ultraThinMaterial)
+        )
+    }
+}
+
+struct ToolButton: View {
+    let icon: String
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                Text(label)
+                    .font(.caption2)
+            }
+            .foregroundColor(isSelected ? .white : .primary)
+            .frame(width: 50, height: 50)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.blue : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct ModernActionButton: View {
+    let icon: String
+    let label: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Label(label, systemImage: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white)
+                        .shadow(radius: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct CognitiveGearSelector: View {
+    @Binding var currentGear: CognitiveGear
+    @Binding var driftModeActive: Bool
+    
+    private let mainGears: [CognitiveGear] = [.capture, .muse, .inquiry]
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(mainGears, id: \.self) { gear in
+                CognitiveGearButton(
+                    gear: gear,
+                    isSelected: currentGear == gear,
+                    action: { 
+                        currentGear = gear
+                        if gear == .muse {
+                            driftModeActive = true
+                        } else {
+                            driftModeActive = false
+                        }
+                    }
+                )
+            }
+        }
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.1))
+        )
+    }
+}
+
+struct CognitiveGearButton: View {
+    let gear: CognitiveGear
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: gear.icon)
+                    .font(.system(size: 16))
+                Text(gear.displayName)
+                    .font(.caption2)
+            }
+            .foregroundColor(isSelected ? .white : .secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(isSelected ? gear.color : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct ZoomControls: View {
+    @Binding var scale: CGFloat
+    let onReset: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Button(action: { scale = min(3.0, scale + 0.2) }) {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .medium))
+            }
+            
+            Text("\(Int(scale * 100))%")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            Button(action: { scale = max(0.5, scale - 0.2) }) {
+                Image(systemName: "minus")
+                    .font(.system(size: 16, weight: .medium))
+            }
+            
+            Divider()
+            
+            Button(action: onReset) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 14))
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white)
+                .shadow(radius: 2)
+        )
+    }
+}
+
+struct MinimapView: View {
+    let nodes: [ThoughtNode]
+    let connections: [NodeConnection]
+    let viewportOffset: CGSize
+    let viewportScale: CGFloat
+    
+    var body: some View {
+        ZStack {
+            // Minimap background
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+            
+            // Minimap content
+            GeometryReader { geometry in
+                ForEach(nodes) { node in
+                    Circle()
+                        .fill(node.nodeType.color)
+                        .frame(width: 4, height: 4)
+                        .position(
+                            x: (node.position.x / 10) + geometry.size.width / 2,
+                            y: (node.position.y / 10) + geometry.size.height / 2
+                        )
+                }
+                
+                // Viewport indicator
+                Rectangle()
+                    .stroke(Color.blue, lineWidth: 2)
+                    .frame(
+                        width: geometry.size.width / viewportScale,
+                        height: geometry.size.height / viewportScale
+                    )
+                    .position(
+                        x: geometry.size.width / 2 - viewportOffset.width / 10,
+                        y: geometry.size.height / 2 - viewportOffset.height / 10
+                    )
+            }
+            .padding(8)
+        }
+        .opacity(0.9)
+    }
+}
+
+struct SearchOverlay: View {
+    @Binding var query: String
+    let nodes: [ThoughtNode]
+    let onSelect: (ThoughtNode) -> Void
+    let onClose: () -> Void
+    
+    @State private var searchResults: [ThoughtNode] = []
+    
+    var body: some View {
+        VStack {
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                
+                TextField("搜索节点...", text: $query)
+                    .textFieldStyle(.plain)
+                    .onChange(of: query) { _, newValue in
+                        performSearch(newValue)
+                    }
+                
+                Button(action: onClose) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding()
+            .background(Color.white)
+            .cornerRadius(10)
+            .shadow(radius: 5)
+            .padding()
+            
+            // Search results
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(searchResults) { node in
+                        SearchResultRow(
+                            node: node,
+                            query: query,
+                            onSelect: { onSelect(node) }
+                        )
+                    }
+                }
+                .padding()
+            }
+            
+            Spacer()
+        }
+        .frame(maxWidth: 400)
+        .background(Color.black.opacity(0.3))
+        .onAppear {
+            performSearch(query)
+        }
+    }
+    
+    private func performSearch(_ query: String) {
+        if query.isEmpty {
+            searchResults = Array(nodes.prefix(10))
+        } else {
+            searchResults = nodes.filter { node in
+                node.content.localizedCaseInsensitiveContains(query)
+            }
+        }
+    }
+}
+
+struct SearchResultRow: View {
+    let node: ThoughtNode
+    let query: String
+    let onSelect: () -> Void
+    
+    var body: some View {
+        Button(action: onSelect) {
+            HStack {
+                Image(systemName: node.nodeType.icon)
+                    .foregroundColor(node.nodeType.color)
+                    .frame(width: 30)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(node.content)
+                        .font(.system(size: 14, weight: .medium))
+                        .lineLimit(2)
+                        .foregroundColor(.primary)
+                    
+                    Text(node.createdAt.formatted())
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding(12)
+            .background(Color.white)
+            .cornerRadius(8)
+            .shadow(radius: 1)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct AIAssistantPanel: View {
+    let nodes: [ThoughtNode]
+    @Binding var suggestions: [AISuggestion]
+    let onClose: () -> Void
+    
+    @State private var isAnalyzing = false
+    @State private var selectedSuggestion: AISuggestion?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            HStack {
+                Image(systemName: "sparkles")
+                    .font(.title2)
+                    .foregroundColor(.purple)
+                
+                Text("AI 助手")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Button(action: onClose) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding()
+            
+            Divider()
+            
+            // AI Actions
+            ScrollView {
+                VStack(spacing: 12) {
+                    AIActionCard(
+                        title: "智能联想",
+                        description: "发现节点间的潜在关联",
+                        icon: "link.circle.fill",
+                        color: .blue,
+                        action: { performSmartAssociation() }
+                    )
+                    
+                    AIActionCard(
+                        title: "结构分析",
+                        description: "分析思维结构和逻辑关系",
+                        icon: "chart.xyaxis.line",
+                        color: .green,
+                        action: { performStructureAnalysis() }
+                    )
+                    
+                    AIActionCard(
+                        title: "情感分析",
+                        description: "识别节点的情感色彩",
+                        icon: "heart.text.square.fill",
+                        color: .pink,
+                        action: { performEmotionalAnalysis() }
+                    )
+                    
+                    AIActionCard(
+                        title: "主题提取",
+                        description: "提取核心主题和关键词",
+                        icon: "tag.fill",
+                        color: .orange,
+                        action: { performTopicExtraction() }
+                    )
+                    
+                    if !suggestions.isEmpty {
+                        Divider()
+                            .padding(.vertical)
+                        
+                        Text("AI 建议")
+                            .font(.headline)
+                            .padding(.horizontal)
+                        
+                        ForEach(suggestions) { suggestion in
+                            AISuggestionCard(
+                                suggestion: suggestion,
+                                onApply: { applySuggestion(suggestion) }
+                            )
+                        }
+                    }
+                }
+                .padding()
+            }
+            
+            if isAnalyzing {
+                HStack {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                    Text("AI 正在分析...")
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+                .padding()
+            }
+        }
+        .frame(width: 350)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(radius: 10)
+        .padding()
+    }
+    
+    private func performSmartAssociation() {
+        isAnalyzing = true
+        // Implement smart association logic
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isAnalyzing = false
+            // Generate suggestions
+        }
+    }
+    
+    private func performStructureAnalysis() {
+        isAnalyzing = true
+        // Implement structure analysis
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isAnalyzing = false
+        }
+    }
+    
+    private func performEmotionalAnalysis() {
+        isAnalyzing = true
+        // Implement emotional analysis
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isAnalyzing = false
+        }
+    }
+    
+    private func performTopicExtraction() {
+        isAnalyzing = true
+        // Implement topic extraction
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            isAnalyzing = false
+        }
+    }
+    
+    private func applySuggestion(_ suggestion: AISuggestion) {
+        // Apply the AI suggestion
+    }
+}
+
+struct AIActionCard: View {
+    let title: String
+    let description: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                    .frame(width: 40)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
+                    Text(description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding()
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct AISuggestionCard: View {
+    let suggestion: AISuggestion
+    let onApply: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: suggestion.icon)
+                    .foregroundColor(suggestion.color)
+                
+                Text(suggestion.title)
+                    .font(.system(size: 14, weight: .medium))
+                
+                Spacer()
+                
+                Button("应用") {
+                    onApply()
+                }
+                .font(.caption)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(4)
+            }
+            
+            Text(suggestion.description)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .lineLimit(2)
+        }
+        .padding(12)
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(8)
+    }
+}
+
+struct EmotionIndicator: View {
+    let emotion: EmotionalTag
+    
+    var body: some View {
+        Text(emotion.emoji)
+            .font(.caption)
+    }
+}
+
+// MARK: - Supporting Types
+
+struct AISuggestion: Identifiable {
+    let id = UUID()
+    let title: String
+    let description: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+}
+
+// MARK: - Extensions
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+        
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue:  Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
+extension NodeType {
+    var icon: String {
+        switch self {
+        case .thought: return "bubble.left"
+        case .insight: return "sparkles"
+        case .question: return "questionmark.circle"
+        case .conclusion: return "checkmark.seal"
+        case .contradiction: return "exclamationmark.triangle"
+        case .structure: return "chart.xyaxis.line"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .thought: return .blue
+        case .insight: return .orange
+        case .question: return .purple
+        case .conclusion: return .green
+        case .contradiction: return .red
+        case .structure: return .indigo
+        }
+    }
+}
+
+extension ConnectionType {
+    var color: Color {
+        switch self {
+        case .strongSupport: return .green
+        case .weakAssociation: return .blue.opacity(0.6)
+        case .contradiction: return .red
+        case .causality: return .orange
+        case .similarity: return .purple
+        case .resonance: return .yellow
+        }
+    }
+}
+
+// CognitiveGear extensions already defined in CognitiveGearService
+
+extension EmotionalTag {
+    var emoji: String {
+        switch self {
+        case .excited: return "🎉"
+        case .calm: return "😌"
+        case .confused: return "😕"
+        case .inspired: return "💡"
+        case .frustrated: return "😤"
+        case .curious: return "🤔"
+        case .confident: return "💪"
+        case .uncertain: return "🫤"
+        }
+    }
+}
+
+#Preview {
+    ModernCanvasView()
+        .modelContainer(for: [ThoughtNode.self, NodeConnection.self])
+}

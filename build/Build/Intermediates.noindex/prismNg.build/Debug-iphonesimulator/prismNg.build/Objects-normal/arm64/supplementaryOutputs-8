@@ -1,0 +1,48 @@
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/InteractionPreferenceService.swift":
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/InteractionPreferenceService.o"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/InteractionPreferenceService.swiftconstvalues"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/InteractionPreferenceService.dia"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/InteractionPreferenceService.swiftdeps"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/InteractionPreferenceService.d"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/Collaboration/CollaborativeSpaceView.swift":
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CollaborativeSpaceView.o"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CollaborativeSpaceView.swiftdeps"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CollaborativeSpaceView.swiftconstvalues"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CollaborativeSpaceView.d"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CollaborativeSpaceView.dia"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/SimpleCanvasView.swift":
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/SimpleCanvasView.dia"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/SimpleCanvasView.o"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/SimpleCanvasView.d"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/SimpleCanvasView.swiftconstvalues"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/SimpleCanvasView.swiftdeps"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/Canvas/ModernCanvasView.swift":
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ModernCanvasView.swiftconstvalues"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ModernCanvasView.swiftdeps"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ModernCanvasView.o"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ModernCanvasView.dia"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ModernCanvasView.d"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/FloatingAssociationPanel.swift":
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/FloatingAssociationPanel.swiftconstvalues"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/FloatingAssociationPanel.swiftdeps"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/FloatingAssociationPanel.o"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/FloatingAssociationPanel.dia"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/FloatingAssociationPanel.d"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/CloudSync/CloudSyncManager.swift":
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncManager.swiftdeps"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncManager.d"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncManager.swiftconstvalues"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncManager.o"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncManager.dia"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/Canvas/AdvancedAnimationSystem.swift":
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AdvancedAnimationSystem.swiftconstvalues"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AdvancedAnimationSystem.d"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AdvancedAnimationSystem.swiftdeps"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AdvancedAnimationSystem.o"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AdvancedAnimationSystem.dia"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/Canvas/ConnectionSprite.swift":
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ConnectionSprite.swiftdeps"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ConnectionSprite.dia"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ConnectionSprite.d"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ConnectionSprite.swiftconstvalues"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/ConnectionSprite.o"

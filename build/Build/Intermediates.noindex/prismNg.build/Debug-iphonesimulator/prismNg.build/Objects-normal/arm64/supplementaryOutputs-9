@@ -1,0 +1,48 @@
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/NodeContextMenu.swift":
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/NodeContextMenu.dia"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/NodeContextMenu.d"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/NodeContextMenu.swiftconstvalues"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/NodeContextMenu.swiftdeps"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/NodeContextMenu.o"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/VectorDBService.swift":
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/VectorDBService.d"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/VectorDBService.o"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/VectorDBService.swiftdeps"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/VectorDBService.dia"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/VectorDBService.swiftconstvalues"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/DriftModeEngine.swift":
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/DriftModeEngine.swiftconstvalues"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/DriftModeEngine.d"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/DriftModeEngine.dia"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/DriftModeEngine.o"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/DriftModeEngine.swiftdeps"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/AIService.swift":
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AIService.d"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AIService.swiftdeps"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AIService.dia"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AIService.o"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AIService.swiftconstvalues"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Views/CloudSync/CloudSyncView.swift":
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncView.o"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncView.d"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncView.dia"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncView.swiftconstvalues"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/CloudSyncView.swiftdeps"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/AICreditsService.swift":
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AICreditsService.swiftconstvalues"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AICreditsService.swiftdeps"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AICreditsService.dia"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AICreditsService.o"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AICreditsService.d"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/AppleSignInService.swift":
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AppleSignInService.swiftdeps"
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AppleSignInService.o"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AppleSignInService.d"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AppleSignInService.dia"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AppleSignInService.swiftconstvalues"
+"/Users/suntiger/Applications/Cursor_project/prismNg/prismNg/Services/AILensService.swift":
+  object: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AILensService.o"
+  swift-dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AILensService.swiftdeps"
+  diagnostics: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AILensService.dia"
+  const-values: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AILensService.swiftconstvalues"
+  dependencies: "/Users/suntiger/Applications/Cursor_project/prismNg/build/Build/Intermediates.noindex/prismNg.build/Debug-iphonesimulator/prismNg.build/Objects-normal/arm64/AILensService.d"

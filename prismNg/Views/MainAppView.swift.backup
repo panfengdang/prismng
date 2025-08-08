@@ -1,0 +1,511 @@
+//
+//  MainAppView.swift
+//  prismNg
+//
+//  Main app container with navigation
+//
+
+import SwiftUI
+import SwiftData
+
+struct MainAppView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var thoughtNodes: [ThoughtNode]
+    @Query private var userConfig: [UserConfiguration]
+    
+    @StateObject private var quotaService = QuotaManagementService()
+    @StateObject private var cloudSyncManager = CloudSyncManager()
+    @StateObject private var interactionService = InteractionPreferenceService()
+    @StateObject private var forgettingService = MemoryForgettingService()
+    @StateObject private var canvasViewModel = CanvasViewModel()
+    @StateObject private var emotionalService = EmotionalComputingService()
+    @StateObject private var appleSignInService = AppleSignInService()
+    @StateObject private var firebaseManager = FirebaseManager.shared
+    @StateObject private var realtimeSyncService = FirestoreRealtimeSyncService()
+    
+    // GrowthOptimizationService needs to be initialized later with quotaService
+    @State private var growthOptimizationService: GrowthOptimizationService?
+    
+    @State private var showingSidebar = false
+    @State private var showingSettings = false
+    @State private var showingMemoryManagement = false
+    @State private var showingSubscription = false
+    @State private var showingSearch = false
+    @State private var selectedView = AppView.canvas
+    
+    enum AppView {
+        case canvas
+        case memory
+        case insights
+        case collaboration
+    }
+    
+    var body: some View {
+        NavigationSplitView(
+            columnVisibility: .constant(.doubleColumn),
+            sidebar: {
+                sidebarContent
+            },
+            detail: {
+                detailContent
+            }
+        )
+        .navigationSplitViewStyle(.balanced)
+        .environmentObject(quotaService)
+        .environmentObject(cloudSyncManager)
+        .environmentObject(interactionService)
+        .environmentObject(appleSignInService)
+        .environmentObject(firebaseManager)
+        .environmentObject(realtimeSyncService)
+        .environmentObject(emotionalService)
+        .environmentObject(canvasViewModel)
+        .environmentObject(forgettingService)
+        .onAppear {
+            if growthOptimizationService == nil {
+                growthOptimizationService = GrowthOptimizationService(quotaService: quotaService)
+            }
+        }
+    }
+    
+    // MARK: - Sidebar
+    private var sidebarContent: some View {
+        List {
+            Section(header: Text("工作空间")) {
+                Button(action: { selectedView = .canvas }) {
+                    Label("思维画布", systemImage: "brain.head.profile")
+                        .foregroundColor(selectedView == .canvas ? .accentColor : .primary)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: { selectedView = .memory }) {
+                    Label("记忆海", systemImage: "memories")
+                        .foregroundColor(selectedView == .memory ? .accentColor : .primary)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: { selectedView = .insights }) {
+                    Label("洞察", systemImage: "lightbulb")
+                        .foregroundColor(selectedView == .insights ? .accentColor : .primary)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: { selectedView = .collaboration }) {
+                    Label("协作", systemImage: "person.2")
+                        .foregroundColor(selectedView == .collaboration ? .accentColor : .primary)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            Section(header: Text("工具")) {
+                Button(action: { showingSearch.toggle() }) {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                        Text("搜索")
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                .keyboardShortcut("f", modifiers: .command)
+                
+                NavigationLink(destination: EmotionalInsightsView(emotionalService: emotionalService)) {
+                    Label("情感分析", systemImage: "heart.text.square")
+                }
+                
+                NavigationLink(destination: StructuralAnalysisViewDetail()) {
+                    Label("结构分析", systemImage: "chart.xyaxis.line")
+                }
+            }
+            
+            Section(header: Text("系统")) {
+                Button(action: { showingSettings.toggle() }) {
+                    HStack {
+                        Image(systemName: "gearshape")
+                        Text("设置")
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: { showingSubscription.toggle() }) {
+                    HStack {
+                        Image(systemName: "creditcard")
+                        Text("订阅")
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: { showingMemoryManagement.toggle() }) {
+                    HStack {
+                        Image(systemName: "internaldrive")
+                        Text("存储管理")
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .listStyle(SidebarListStyle())
+        .navigationTitle("PrismNg")
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(
+                interactionService: interactionService,
+                quotaService: quotaService,
+                cloudSyncManager: cloudSyncManager
+            )
+            .environmentObject(appleSignInService)
+            .environmentObject(firebaseManager)
+            .environmentObject(realtimeSyncService)
+            .environmentObject(growthOptimizationService ?? GrowthOptimizationService(quotaService: quotaService))
+        }
+        .sheet(isPresented: $showingSubscription) {
+            SubscriptionView(quotaService: quotaService)
+        }
+        .sheet(isPresented: $showingMemoryManagement) {
+            MemoryManagementView(
+                forgettingService: forgettingService,
+                canvasViewModel: canvasViewModel
+            )
+        }
+        .searchable(text: .constant(""), isPresented: $showingSearch)
+    }
+    
+    // MARK: - Detail Content
+    @ViewBuilder
+    private var detailContent: some View {
+        switch selectedView {
+        case .canvas:
+            ModernCanvasMainView()
+                .environmentObject(canvasViewModel)
+                .environmentObject(quotaService)
+                .environmentObject(emotionalService)
+                .environmentObject(interactionService)
+                .toolbar {
+                    ToolbarItemGroup(placement: .navigation) {
+                        canvasToolbar
+                    }
+                }
+        case .memory:
+            MemorySeaView()
+                .environmentObject(forgettingService)
+                .environmentObject(canvasViewModel)
+        case .insights:
+            InsightsViewDetail()
+                .environmentObject(quotaService)
+        case .collaboration:
+            CollaborationView()
+                .environmentObject(cloudSyncManager)
+        }
+    
+    // MARK: - Canvas Toolbar
+    private var canvasToolbar: some View {
+        HStack(spacing: 16) {
+            // Node count indicator
+            HStack(spacing: 4) {
+                Image(systemName: "circle.hexagongrid")
+                Text("\(thoughtNodes.count)")
+                    .font(.caption)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.secondary.opacity(0.1))
+            .cornerRadius(6)
+            
+            Divider()
+                .frame(height: 20)
+            
+            // Quick actions
+            Button(action: createNewNode) {
+                Image(systemName: "plus.circle")
+            }
+            .keyboardShortcut("n", modifiers: .command)
+            .help("创建新节点")
+            
+            Button(action: { showingSearch.toggle() }) {
+                Image(systemName: "magnifyingglass")
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .help("搜索")
+            
+            Button(action: refreshCanvas) {
+                Image(systemName: "arrow.clockwise")
+            }
+            .help("刷新画布")
+        }
+    }
+    
+    // MARK: - Actions
+    private func toggleSidebar() {
+        #if os(macOS)
+        NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
+        #else
+        showingSidebar.toggle()
+        #endif
+    }
+    
+    private func createNewNode() {
+        let node = ThoughtNode(
+            content: "新想法",
+            nodeType: .thought,
+            position: Position(x: 0, y: 0)
+        )
+        modelContext.insert(node)
+        try? modelContext.save()
+    }
+    
+    private func refreshCanvas() {
+        // Trigger canvas refresh
+    }
+}
+
+// MARK: - Memory Sea View
+struct MemorySeaView: View {
+    @Query private var nodes: [ThoughtNode]
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("记忆海")
+                    .font(.largeTitle)
+                    .bold()
+                    .padding()
+                
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 16) {
+                    ForEach(nodes) { node in
+                        MemoryCard(node: node)
+                    }
+                }
+                .padding()
+            }
+        }
+        .background(Color(UIColor.systemGroupedBackground))
+    }
+}
+
+struct MemoryCard: View {
+    let node: ThoughtNode
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: node.nodeType.icon)
+                    .foregroundColor(node.nodeType.color)
+                Text(node.nodeType.displayName)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(node.createdAt, style: .relative)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Text(node.content)
+                .lineLimit(3)
+                .font(.body)
+            
+            if !node.emotionalTags.isEmpty {
+                HStack {
+                    ForEach(node.emotionalTags, id: \.self) { tag in
+                        Text(tag.rawValue)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(UIColor.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+        .shadow(radius: 2)
+    }
+}
+
+// MARK: - Insights View
+struct InsightsViewDetail: View {
+    @Query private var nodes: [ThoughtNode]
+    @State private var insights: [String] = []
+    @State private var isAnalyzing = false
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    Text("AI 洞察")
+                        .font(.largeTitle)
+                        .bold()
+                    
+                    Spacer()
+                    
+                    Button(action: generateInsights) {
+                        Label(isAnalyzing ? "分析中..." : "生成洞察", 
+                              systemImage: "sparkles")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isAnalyzing)
+                }
+                .padding()
+                
+                if insights.isEmpty && !isAnalyzing {
+                    ContentUnavailableView(
+                        "暂无洞察",
+                        systemImage: "lightbulb",
+                        description: Text("点击生成洞察来分析您的思维")
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 400)
+                } else {
+                    ForEach(insights, id: \.self) { insight in
+                        InsightCardDetail(insight: insight)
+                    }
+                    .padding(.horizontal)
+                }
+            }
+        }
+        .background(Color(UIColor.systemGroupedBackground))
+    }
+    
+    private func generateInsights() {
+        Task {
+            isAnalyzing = true
+            let aiService = AIService()
+            if let insight = try? await aiService.generateInsight(from: Array(nodes.prefix(10))) {
+                insights.append(insight)
+            }
+            isAnalyzing = false
+        }
+    }
+}
+
+struct InsightCardDetail: View {
+    let insight: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "lightbulb.fill")
+                .foregroundColor(.yellow)
+                .font(.title2)
+            
+            Text(insight)
+                .font(.body)
+            
+            Spacer()
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color.blue.opacity(0.1), Color.purple.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Collaboration View
+struct CollaborationView: View {
+    var body: some View {
+        ContentUnavailableView(
+            "协作功能即将推出",
+            systemImage: "person.2.fill",
+            description: Text("与团队成员共同构建思维网络")
+        )
+    }
+}
+
+// MARK: - Structural Analysis View
+struct StructuralAnalysisViewDetail: View {
+    @Query private var nodes: [ThoughtNode]
+    @Query private var connections: [NodeConnection]
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("结构分析")
+                    .font(.largeTitle)
+                    .bold()
+                    .padding()
+                
+                // Statistics
+                HStack(spacing: 20) {
+                    StatCardDetail(
+                        title: "节点总数", 
+                        value: "\(nodes.count)", 
+                        icon: "circle.hexagongrid",
+                        color: .blue
+                    )
+                    StatCardDetail(
+                        title: "连接数", 
+                        value: "\(connections.count)", 
+                        icon: "link",
+                        color: .green
+                    )
+                    StatCardDetail(
+                        title: "平均连接度", 
+                        value: String(format: "%.1f", avgConnections), 
+                        icon: "network",
+                        color: .purple
+                    )
+                }
+                .padding(.horizontal)
+                
+                // Node type distribution
+                VStack(alignment: .leading) {
+                    Text("节点类型分布")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    ForEach(NodeType.allCases, id: \.self) { type in
+                        HStack {
+                            Image(systemName: type.icon)
+                                .foregroundColor(type.color)
+                            Text(type.displayName)
+                            Spacer()
+                            Text("\(nodeCount(for: type))")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 4)
+                    }
+                }
+                .padding()
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .cornerRadius(12)
+                .padding(.horizontal)
+            }
+        }
+        .background(Color(UIColor.systemGroupedBackground))
+    }
+    
+    private var avgConnections: Double {
+        guard !nodes.isEmpty else { return 0 }
+        return Double(connections.count * 2) / Double(nodes.count)
+    }
+    
+    private func nodeCount(for type: NodeType) -> Int {
+        nodes.filter { $0.nodeType == type }.count
+    }
+}
+
+struct StatCardDetail: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+            Text(value)
+                .font(.title)
+                .bold()
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color(UIColor.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+    }
+}
