@@ -35,7 +35,7 @@ class InfiniteCanvasScene: SKScene {
     
     // Performance optimization
     private var visibleNodes: Set<UUID> = []
-    private var updateTimer: Timer?
+    private var lastUpdateTime: TimeInterval = 0
     
     // Drift mode
     private var isDriftModeEnabled = false
@@ -54,7 +54,7 @@ class InfiniteCanvasScene: SKScene {
         setupCamera()
         setupGrid()
         setupGestures()
-        startUpdateTimer()
+        // use SpriteKit update loop instead of Timer-based loop
     }
     
     // MARK: - Scene Setup
@@ -149,11 +149,13 @@ class InfiniteCanvasScene: SKScene {
         view.addGestureRecognizer(pinchGesture)
     }
     
-    // MARK: - Update Timer
-    
-    private func startUpdateTimer() {
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 1.0/10.0, repeats: true) { [weak self] _ in
-            self?.updateVisibleNodes()
+    // MARK: - Update Loop
+    override func update(_ currentTime: TimeInterval) {
+        // Throttle heavy updates to ~10 FPS to reduce cost
+        let delta = currentTime - lastUpdateTime
+        if delta >= (1.0 / 10.0) {
+            lastUpdateTime = currentTime
+            updateVisibleNodes()
         }
     }
     

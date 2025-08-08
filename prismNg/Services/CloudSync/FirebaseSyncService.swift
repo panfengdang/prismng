@@ -40,7 +40,7 @@ struct SyncConfiguration {
 
 // MARK: - Firebase Sync Service
 @MainActor
-class FirebaseSyncService: ObservableObject {
+class FirebaseSyncService: ObservableObject, SyncServiceProtocol {
     @Published var syncStatus: SyncStatus = .idle
     @Published var lastSyncDate: Date?
     @Published var pendingChanges: Int = 0
@@ -60,7 +60,11 @@ class FirebaseSyncService: ObservableObject {
         setupFirebaseObservers()
     }
     
-    func setup(with modelContext: ModelContext) {
+    // MARK: - SyncServiceProtocol
+    var isAuthenticated: Bool { isAuthenticatedBacking }
+    private var isAuthenticatedBacking: Bool = false
+
+    func setup(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
     
@@ -71,7 +75,7 @@ class FirebaseSyncService: ObservableObject {
         firebaseManager.$isAuthenticated
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isAuth in
-                self?.isAuthenticated = isAuth
+                self?.isAuthenticatedBacking = isAuth
                 if isAuth {
                     Task {
                         await self?.performSync()
@@ -229,6 +233,20 @@ class FirebaseSyncService: ObservableObject {
         
         pendingChanges = max(0, pendingChanges - 1)
     }
+
+    func fetchThoughtNodes() async throws -> [ThoughtNode] {
+        guard isAuthenticated, let userId = userId else {
+            throw SyncError.notAuthenticated
+        }
+        let nodes = try await firebaseManager.fetchDocuments(
+            from: "\(FirebaseCollections.users)/\(userId)/\(FirebaseCollections.thoughtNodes)",
+            as: ThoughtNodeDTO.self
+        )
+        return nodes.map { $0.toThoughtNode() }
+    }
+
+    func startRealtimeSync() async throws { /* TODO: attach listeners */ }
+    func stopRealtimeSync() { /* TODO: detach listeners */ }
     
     func syncConnection(_ connection: NodeConnection) async throws {
         guard isAuthenticated, let userId = userId else {

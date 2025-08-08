@@ -12,7 +12,7 @@ import Combine
 
 // MARK: - iCloud Sync Service
 @MainActor
-class iCloudSyncService: ObservableObject {
+class iCloudSyncService: ObservableObject, SyncServiceProtocol {
     @Published var iCloudAvailable: Bool = false
     @Published var syncStatus: SyncStatus = .idle
     @Published var lastSyncDate: Date?
@@ -69,7 +69,12 @@ class iCloudSyncService: ObservableObject {
     
     // MARK: - Sync Operations
     
-    func syncThoughtNode(_ node: ThoughtNode) async throws {
+    // MARK: - SyncServiceProtocol
+    var isAuthenticated: Bool { iCloudAvailable }
+    
+    func setup(modelContext: ModelContext) { /* no-op for iCloud */ }
+    
+    func syncNode(_ node: ThoughtNode) async throws {
         guard iCloudAvailable, let privateDatabase = privateDatabase else {
             throw iCloudError.notAvailable
         }
@@ -105,6 +110,9 @@ class iCloudSyncService: ObservableObject {
             throw iCloudError.fetchFailed(error.localizedDescription)
         }
     }
+
+    func startRealtimeSync() async throws { /* TODO: CloudKit subscriptions */ }
+    func stopRealtimeSync() { /* TODO: cancel subscriptions */ }
     
     func deleteThoughtNode(_ nodeId: UUID) async throws {
         guard iCloudAvailable, let privateDatabase = privateDatabase else {
