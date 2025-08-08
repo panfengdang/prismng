@@ -38,24 +38,48 @@ class CanvasViewModel: ObservableObject {
     weak var scene: InfiniteCanvasScene?
     
     // MARK: - Services
-    private let persistenceService = PersistenceService()
-    private let aiService = AIService()
-    let vectorService = VectorDBService()
-    let coreMLService = CoreMLEmbeddingService()
+    private let persistenceService: PersistenceService
+    private let aiService: AIService
+    let vectorService: VectorDBService
+    let coreMLService: CoreMLEmbeddingService
     let embeddingManager: EmbeddingManager
-    let associationService = AssociationRecommendationService()
-    @Published var interactionService = InteractionPreferenceService()
-    @Published var quotaService = QuotaManagementService()
-    @Published var cognitiveEngine = CognitiveFlowStateEngine()
-    @Published var cloudSyncManager = CloudSyncManager()
+    let associationService: AssociationRecommendationService
+    @Published var interactionService: InteractionPreferenceService
+    @Published var quotaService: QuotaManagementService
+    @Published var cognitiveEngine: CognitiveFlowStateEngine
+    @Published var cloudSyncManager: CloudSyncManager
     @Published var aiLensService: AILensService? = nil
-    @Published var emotionalService = EmotionalComputingService()
-    @Published var forgettingService = MemoryForgettingService()
+    @Published var emotionalService: EmotionalComputingService
+    @Published var forgettingService: MemoryForgettingService
     
     // Growth Optimization
     private var growthOptimizationService: GrowthOptimizationService?
     
-    init() {
+    init(
+        persistenceService: PersistenceService = PersistenceService(),
+        aiService: AIService = AIService(),
+        vectorService: VectorDBService = VectorDBService(),
+        coreMLService: CoreMLEmbeddingService = CoreMLEmbeddingService(),
+        associationService: AssociationRecommendationService = AssociationRecommendationService(),
+        interactionService: InteractionPreferenceService = InteractionPreferenceService(),
+        quotaService: QuotaManagementService = QuotaManagementService(),
+        cognitiveEngine: CognitiveFlowStateEngine = CognitiveFlowStateEngine(),
+        cloudSyncManager: CloudSyncManager = CloudSyncManager(),
+        emotionalService: EmotionalComputingService = EmotionalComputingService(),
+        forgettingService: MemoryForgettingService = MemoryForgettingService()
+    ) {
+        self.persistenceService = persistenceService
+        self.aiService = aiService
+        self.vectorService = vectorService
+        self.coreMLService = coreMLEmbeddingService
+        self.associationService = associationService
+        self.interactionService = interactionService
+        self.quotaService = quotaService
+        self.cognitiveEngine = cognitiveEngine
+        self.cloudSyncManager = cloudSyncManager
+        self.emotionalService = emotionalService
+        self.forgettingService = forgettingService
+
         // Initialize embedding manager with services
         self.embeddingManager = EmbeddingManager(
             embeddingService: coreMLService,

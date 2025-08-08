@@ -19,11 +19,13 @@ class HybridAIService: ObservableObject {
     private let localAIService: AIService
     private let cloudAIService: FirebaseFunctionsAIService
     private let quotaService: QuotaManagementService
+    private let router: AIRequestRouter
     
     init(quotaService: QuotaManagementService) {
-        self.localAIService = AIService()
+        self.localAIService = AIService(quotaService: quotaService)
         self.cloudAIService = FirebaseFunctionsAIService()
         self.quotaService = quotaService
+        self.router = AIRequestRouter(quotaService: quotaService)
         
         // Monitor network status
         Task {
@@ -50,8 +52,9 @@ class HybridAIService: ObservableObject {
         do {
             let result: LocalAIAnalysisResult
             
-            // Decide between local vs cloud processing
-            if shouldUseCloudProcessing(for: .analysis, nodeCount: context.count + 1) {
+            // Decide backend via router (cloudProxy / byok / mock)
+            let backend = router.decideBackend(for: .analysis, nodeCount: context.count + 1)
+            if backend == .cloudProxy && networkStatus == .online {
                 let cloudResult = try await cloudAIService.analyzeThoughtNode(node, context: context)
                 result = LocalAIAnalysisResult(
                     nodeId: cloudResult.nodeId,
@@ -105,7 +108,8 @@ class HybridAIService: ObservableObject {
         defer { isProcessing = false }
         
         do {
-            if shouldUseCloudProcessing(for: .associations, nodeCount: context.count) {
+            let backend = router.decideBackend(for: .associations, nodeCount: context.count)
+            if backend == .cloudProxy && networkStatus == .online {
                 let associations = try await cloudAIService.generateAssociations(for: node, in: context)
                 _ = quotaService.incrementQuotaUsage()
                 return associations
@@ -145,7 +149,8 @@ class HybridAIService: ObservableObject {
         defer { isProcessing = false }
         
         do {
-            if shouldUseCloudProcessing(for: .insights, nodeCount: nodes.count) {
+            let backend = router.decideBackend(for: .insights, nodeCount: nodes.count)
+            if backend == .cloudProxy && networkStatus == .online {
                 let insight = try await cloudAIService.generateInsight(from: nodes)
                 _ = quotaService.incrementQuotaUsage()
                 return insight
@@ -234,34 +239,9 @@ class HybridAIService: ObservableObject {
     // MARK: - Processing Decision Logic
     
     private func shouldUseCloudProcessing(for taskType: HybridAITaskType, nodeCount: Int) -> Bool {
-        // Factors for decision making:
-        
-        // 1. Network connectivity
-        guard networkStatus == .online else { return false }
-        
-        // 2. User subscription tier
-        let subscriptionTier = quotaService.subscriptionTier
-        
-        // 3. Task complexity
-        let isComplexTask = nodeCount > 5 || taskType == .insights
-        
-        // 4. Available quota
-        guard quotaService.canUseAI() else { return false }
-        
-        // Decision matrix
-        switch subscriptionTier {
-        case .free:
-            // Free users: only use cloud for complex tasks when quota available
-            return isComplexTask && nodeCount <= 3
-            
-        case .explorer:
-            // Explorer: use cloud for medium complexity tasks
-            return nodeCount > 2 || taskType == .insights
-            
-        case .advanced, .professional:
-            // Premium users: prefer cloud processing for better results
-            return true
-        }
+        // Deprecated: decision now handled by AIRequestRouter + networkStatus
+        let backend = router.decideBackend(for: taskType, nodeCount: nodeCount)
+        return backend == .cloudProxy && networkStatus == .online
     }
     
     // MARK: - Helper Methods

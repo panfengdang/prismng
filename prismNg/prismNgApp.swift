@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import BackgroundTasks
 
 @main
 struct prismNgApp: App {
@@ -16,6 +17,8 @@ struct prismNgApp: App {
         print("PrismNg App initializing...")
         // Firebase初始化暂时跳过，避免崩溃
         // FirebaseManager.shared.initialize()
+        // Register background tasks
+        BackgroundTaskManager.shared.registerTasks()
     }
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -42,6 +45,7 @@ struct prismNgApp: App {
                 .environmentObject(FirebaseManager.shared)
                 .onAppear {
                     print("ContentView appeared in WindowGroup")
+                    BackgroundTaskManager.shared.scheduleAll()
                 }
         }
         .modelContainer(sharedModelContainer)
