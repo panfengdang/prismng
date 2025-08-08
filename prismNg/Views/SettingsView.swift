@@ -33,6 +33,7 @@ struct SettingsView: View {
             cloudSyncSection
             realtimeSyncSection
             dataManagementSection
+            bgTasksSection
             aboutSection
         }
         .navigationTitle("设置")
@@ -297,6 +298,31 @@ struct SettingsView: View {
             }
         } header: {
             Text("数据管理")
+        }
+    }
+
+    private var bgTasksSection: some View {
+        Section {
+            Button {
+                BackgroundTaskManager.shared.scheduleAll()
+            } label: {
+                Label("立即调度后台任务", systemImage: "clock.arrow.2.circlepath")
+            }
+            .accessibilityLabel("Schedule Background Tasks")
+            
+            Button {
+                BackgroundTaskManager.shared.setHandlers(
+                    vectorIndex: { AppLogger.log("Manual vector index rebuild", category: .ai, type: .info) },
+                    associationIncubation: { AppLogger.log("Manual association incubation", category: .ai, type: .info) },
+                    forgettingScore: { AppLogger.log("Manual forgetting score", category: .ai, type: .info) }
+                )
+            } label: {
+                Label("设置任务处理器（示例）", systemImage: "gearshape")
+            }
+        } header: {
+            Text("后台任务")
+        } footer: {
+            Text("需要在 Info.plist 配置 BGTaskSchedulerPermittedIdentifiers，并在 Capabilities 中开启 Background Modes。").font(.caption)
         }
     }
     

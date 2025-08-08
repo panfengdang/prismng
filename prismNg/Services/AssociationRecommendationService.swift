@@ -17,8 +17,8 @@ class AssociationRecommendationService: ObservableObject {
     @Published var isAnalyzing: Bool = false
     
     // MARK: - Private Properties
-    private let vectorService = VectorDBService()
-    private let aiService = AIService()
+    private var vectorService: VectorDBService
+    private var aiService: AIService
     private var modelContext: ModelContext?
     
     // Thresholds for different types of associations
@@ -26,9 +26,19 @@ class AssociationRecommendationService: ObservableObject {
     private let moderateAssociationThreshold: Float = 0.6
     private let weakAssociationThreshold: Float = 0.4
     
-    // MARK: - Setup
+    // MARK: - Init & Setup
+    init(vectorService: VectorDBService = VectorDBService(), aiService: AIService = AIService()) {
+        self.vectorService = vectorService
+        self.aiService = aiService
+    }
+
     func setup(modelContext: ModelContext) {
         self.modelContext = modelContext
+    }
+
+    func setDependencies(vectorService: VectorDBService, aiService: AIService) {
+        self.vectorService = vectorService
+        self.aiService = aiService
     }
     
     // MARK: - Main Recommendation Methods
@@ -104,34 +114,26 @@ class AssociationRecommendationService: ObservableObject {
     // MARK: - Vector-based Association Analysis
     
     private func findSimilarNodes(to targetNode: ThoughtNode, in allNodes: [ThoughtNode]) async throws -> [AssociationRecommendation] {
-        let similarNodeIds = try await vectorService.findSimilar(to: targetNode.id, limit: 10)
-        
+        // Ensure we have a fresh embedding for the target node content
+        let queryEmbedding = try await getNodeEmbedding(targetNode)
+        let results = try await vectorService.findSimilarByVector(queryEmbedding, limit: 10)
+
         var recommendations: [AssociationRecommendation] = []
-        
-        for nodeId in similarNodeIds {
-            guard let node = allNodes.first(where: { $0.id == nodeId }) else { continue }
-            
-            // Get similarity score
-            let results = try await vectorService.findSimilarByVector(
-                await getNodeEmbedding(targetNode), 
-                limit: allNodes.count
-            )
-            
-            if let result = results.first(where: { $0.nodeId == nodeId }) {
-                let associationType = classifyAssociationType(similarity: result.similarity)
-                let recommendation = AssociationRecommendation(
+        for result in results {
+            guard let node = allNodes.first(where: { $0.id == result.nodeId }) else { continue }
+            let associationType = classifyAssociationType(similarity: result.similarity)
+            recommendations.append(
+                AssociationRecommendation(
                     id: UUID(),
                     targetNodeId: targetNode.id,
-                    associatedNodeId: nodeId,
+                    associatedNodeId: node.id,
                     associationType: associationType,
                     confidence: result.similarity,
                     reasoning: generateSemanticReasoning(similarity: result.similarity),
                     recommendationType: .semantic
                 )
-                recommendations.append(recommendation)
-            }
+            )
         }
-        
         return recommendations
     }
     
@@ -299,14 +301,8 @@ class AssociationRecommendationService: ObservableObject {
     }
     
     private func getNodeEmbedding(_ node: ThoughtNode) async throws -> [Float] {
-        if node.hasEmbedding,
-           let results = try? await vectorService.findSimilarByVector([0.0], limit: 1),
-           results.isEmpty {
-            // Try to get existing embedding
-            return try await aiService.generateEmbedding(for: node.content)
-        } else {
-            return try await aiService.generateEmbedding(for: node.content)
-        }
+        // 当前没有持久化 embedding 向量，直接使用文本即时生成（on-the-fly embedding）
+        return try await aiService.generateEmbedding(for: node.content)
     }
     
     private func classifyAssociationType(similarity: Float) -> AssociationType {
