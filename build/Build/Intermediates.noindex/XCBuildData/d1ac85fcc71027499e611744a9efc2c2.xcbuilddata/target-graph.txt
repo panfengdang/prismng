@@ -1,2 +1,0 @@
-Target dependency graph (1 target)
-Target 'prismNg' in project 'prismNg' (no dependencies)
