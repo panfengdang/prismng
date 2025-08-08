@@ -18,6 +18,21 @@ final class BackgroundTaskManager {
     static let shared = BackgroundTaskManager()
     private init() {}
     
+    // Handlers can be set at runtime (Dependency Injection via closures)
+    private var onVectorIndex: (() -> Void)?
+    private var onAssociationIncubation: (() -> Void)?
+    private var onForgettingScore: (() -> Void)?
+    
+    func setHandlers(
+        vectorIndex: (() -> Void)? = nil,
+        associationIncubation: (() -> Void)? = nil,
+        forgettingScore: (() -> Void)? = nil
+    ) {
+        self.onVectorIndex = vectorIndex
+        self.onAssociationIncubation = associationIncubation
+        self.onForgettingScore = forgettingScore
+    }
+    
     func registerTasks() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: BGTaskIdentifier.vectorIndex.rawValue, using: nil) { task in
             self.handleVectorIndexTask(task: task as! BGProcessingTask)
@@ -61,7 +76,7 @@ final class BackgroundTaskManager {
         let queue = DispatchQueue.global(qos: .utility)
         task.expirationHandler = { task.setTaskCompleted(success: false) }
         queue.async {
-            // TODO: inject EnhancedVectorDBService and rebuild index
+            self.onVectorIndex?()
             task.setTaskCompleted(success: true)
         }
     }
@@ -70,7 +85,7 @@ final class BackgroundTaskManager {
         let queue = DispatchQueue.global(qos: .utility)
         task.expirationHandler = { task.setTaskCompleted(success: false) }
         queue.async {
-            // TODO: run weak association incubation
+            self.onAssociationIncubation?()
             task.setTaskCompleted(success: true)
         }
     }
@@ -79,7 +94,7 @@ final class BackgroundTaskManager {
         let queue = DispatchQueue.global(qos: .utility)
         task.expirationHandler = { task.setTaskCompleted(success: false) }
         queue.async {
-            // TODO: compute forgetting scores periodically
+            self.onForgettingScore?()
             task.setTaskCompleted(success: true)
         }
     }

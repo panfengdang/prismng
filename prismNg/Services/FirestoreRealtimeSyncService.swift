@@ -119,41 +119,56 @@ class FirestoreRealtimeSyncService: ObservableObject {
     }
     
     private func setupThoughtNodesListener(userId: String) async {
-        // In real implementation, this would be a Firestore listener
-        // For now, simulate with periodic polling
-        let listener = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+        // Placeholder for real Firestore listener; using mock listener API
+        let registration = firebaseManager.listenToDocument(
+            collection: "users/\(userId)/\(thoughtNodesCollection)",
+            documentId: "_changes",
+            as: ThoughtNodeDTO.self
+        ) { [weak self] _ in
             Task { @MainActor in
-                await self.syncThoughtNodesFromFirestore(userId: userId)
+                await self?.syncThoughtNodesFromFirestore(userId: userId)
             }
         }
-        listeners["thoughtNodes"] = listener
+        listeners["thoughtNodes"] = registration
     }
     
     private func setupConnectionsListener(userId: String) async {
-        let listener = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+        let registration = firebaseManager.listenToDocument(
+            collection: "users/\(userId)/\(connectionsCollection)",
+            documentId: "_changes",
+            as: NodeConnectionDTO.self
+        ) { [weak self] _ in
             Task { @MainActor in
-                await self.syncConnectionsFromFirestore(userId: userId)
+                await self?.syncConnectionsFromFirestore(userId: userId)
             }
         }
-        listeners["connections"] = listener
+        listeners["connections"] = registration
     }
     
     private func setupUserConfigListener(userId: String) async {
-        let listener = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { _ in
+        let registration = firebaseManager.listenToDocument(
+            collection: userConfigCollection,
+            documentId: userId,
+            as: UserConfigurationDTO.self
+        ) { [weak self] _ in
             Task { @MainActor in
-                await self.syncUserConfigFromFirestore(userId: userId)
+                await self?.syncUserConfigFromFirestore(userId: userId)
             }
         }
-        listeners["userConfig"] = listener
+        listeners["userConfig"] = registration
     }
     
     private func setupAIAnalysisListener(userId: String) async {
-        let listener = Timer.scheduledTimer(withTimeInterval: 8.0, repeats: true) { _ in
+        let registration = firebaseManager.listenToDocument(
+            collection: "users/\(userId)/\(aiAnalysisCollection)",
+            documentId: "_changes",
+            as: AITaskDTO.self
+        ) { [weak self] _ in
             Task { @MainActor in
-                await self.syncAIAnalysisFromFirestore(userId: userId)
+                await self?.syncAIAnalysisFromFirestore(userId: userId)
             }
         }
-        listeners["aiAnalysis"] = listener
+        listeners["aiAnalysis"] = registration
     }
     
     // MARK: - Initial Sync
