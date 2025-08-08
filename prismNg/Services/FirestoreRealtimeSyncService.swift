@@ -46,7 +46,7 @@ class FirestoreRealtimeSyncService: ObservableObject {
         // Observe authentication state
         firebaseManager.$isAuthenticated
             .sink { [weak self] isAuth in
-                if isAuth {
+                if isAuth && FeatureFlags.shared.enableRealtimeSync {
                     Task { await self?.startRealtimeSync() }
                 } else {
                     Task { await self?.stopRealtimeSync() }
@@ -56,7 +56,7 @@ class FirestoreRealtimeSyncService: ObservableObject {
         
         firebaseManager.$currentUser
             .sink { [weak self] user in
-                if user != nil {
+                if user != nil && FeatureFlags.shared.enableRealtimeSync {
                     Task { await self?.startRealtimeSync() }
                 }
             }
@@ -377,6 +377,16 @@ class FirestoreRealtimeSyncService: ObservableObject {
             syncStatus = .error("Sync operation failed: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
+    }
+    
+    // MARK: - Batch Execution (Mock)
+    func executeBatch(_ operations: [FirestoreSyncOperation], userId: String) async {
+        for op in operations { await executeSyncOperation(op, userId: userId) }
+    }
+    
+    // MARK: - Conflict Resolution Hook
+    func resolveConflictIfNeeded<T: Codable>(local: T, remote: T, type: T.Type) async -> T {
+        await resolveConflict(local: local, remote: remote, type: type)
     }
     
     // MARK: - Conflict Resolution

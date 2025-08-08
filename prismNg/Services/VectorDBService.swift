@@ -319,6 +319,21 @@ class EnhancedVectorDBService: VectorDBService {
         // Implement LSH-based approximate search
         return try await performLSHSearch(vector: vector, limit: limit, approximationFactor: approximationFactor)
     }
+
+    // MARK: - Import Existing Store
+    func importFrom(other service: VectorDBService) async {
+        await withCheckedContinuation { continuation in
+            self.queue.async { [weak self] in
+                guard let self = self else { return }
+                // Copy vectors from another service instance
+                for (nodeId, vector) in service.vectorStore {
+                    self.vectorStore[nodeId] = vector
+                }
+                self.writeCurrentStoreToDisk()
+                continuation.resume()
+            }
+        }
+    }
     
     private func performLSHSearch(vector: [Float], limit: Int, approximationFactor: Float) async throws -> [LocalVectorSearchResult] {
         return try await withCheckedThrowingContinuation { continuation in
