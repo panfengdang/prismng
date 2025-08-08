@@ -13,7 +13,7 @@ struct MainAppView: View {
     @Query private var thoughtNodes: [ThoughtNode]
     @Query private var userConfig: [UserConfiguration]
     
-    @StateObject private var quotaService = QuotaManagementService()
+    @EnvironmentObject private var quotaService: QuotaManagementService
     @StateObject private var cloudSyncManager = CloudSyncManager()
     @StateObject private var interactionService = InteractionPreferenceService()
     @StateObject private var forgettingService = MemoryForgettingService()
@@ -87,6 +87,8 @@ struct MainAppView: View {
             if growthOptimizationService == nil {
                 growthOptimizationService = GrowthOptimizationService(quotaService: quotaService)
             }
+            // Ensure ViewModel uses the global quota service instance
+            canvasViewModel.quotaService = quotaService
         }
         .sheet(isPresented: $showingSettings) {
             NavigationView {

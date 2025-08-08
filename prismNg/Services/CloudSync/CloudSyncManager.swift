@@ -51,6 +51,7 @@ class CloudSyncManager: ObservableObject {
         // Delay service initialization
         Task { @MainActor in
             setupObservers()
+            loadSelectedProvider()
         }
     }
     
@@ -69,6 +70,13 @@ class CloudSyncManager: ObservableObject {
             Task {
                 await performFullSync()
             }
+        }
+    }
+
+    private func loadSelectedProvider() {
+        if let raw = UserDefaults.standard.string(forKey: "selectedCloudProvider"),
+           let provider = CloudProvider(rawValue: raw) {
+            selectedProvider = provider
         }
     }
     

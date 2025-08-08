@@ -40,6 +40,11 @@ class VectorDBService: VectorDBServiceProtocol {
                 }
                 
                 do {
+                    // Dimension check: ensure consistent dimensionality across the store
+                    if let firstVector = self.vectorStore.values.first, firstVector.count != vector.count {
+                        continuation.resume(throwing: VectorDBError.dimensionMismatch)
+                        return
+                    }
                     self.vectorStore[nodeId] = vector
                     self.saveVectorStore()
                     continuation.resume()
@@ -100,6 +105,11 @@ class VectorDBService: VectorDBServiceProtocol {
                     return
                 }
                 
+                // Dimension check against existing store
+                if let firstVector = self.vectorStore.values.first, firstVector.count != vector.count {
+                    continuation.resume(throwing: VectorDBError.dimensionMismatch)
+                    return
+                }
                 let results = self.computeSimilarities(to: vector, excluding: nil)
                 let topResults = Array(results.prefix(limit))
                 
@@ -130,11 +140,11 @@ class VectorDBService: VectorDBServiceProtocol {
     internal func cosineSimilarity(_ vectorA: [Float], _ vectorB: [Float]) -> Float {
         guard vectorA.count == vectorB.count else { return 0.0 }
         
-        let dotProduct = zip(vectorA, vectorB).reduce(0.0) { result, pair in
+        let dotProduct = zip(vectorA, vectorB).reduce(Float(0.0)) { result, pair in
             result + pair.0 * pair.1
         }
-        let magnitudeA = sqrt(vectorA.reduce(0.0) { $0 + $1 * $1 })
-        let magnitudeB = sqrt(vectorB.reduce(0.0) { $0 + $1 * $1 })
+        let magnitudeA = sqrt(vectorA.reduce(Float(0.0)) { $0 + $1 * $1 })
+        let magnitudeB = sqrt(vectorB.reduce(Float(0.0)) { $0 + $1 * $1 })
         
         guard magnitudeA > 0 && magnitudeB > 0 else { return 0.0 }
         

@@ -39,6 +39,7 @@ struct prismNgApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(quotaService)
+                .environmentObject(FirebaseManager.shared)
                 .onAppear {
                     print("ContentView appeared in WindowGroup")
                 }

@@ -11,6 +11,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var thoughtNodes: [ThoughtNode]
     @Query private var userConfig: [UserConfiguration]
+    @EnvironmentObject private var firebaseManager: FirebaseManager
     
     @State private var showOnboarding = false
     @State private var showDualTrackWelcome = false
@@ -19,20 +20,27 @@ struct ContentView: View {
     @StateObject private var interactionService = InteractionPreferenceService()
 
     var body: some View {
-        // 使用完整的主应用界面，包含侧边栏导航
-        MainAppView()
-            .onAppear {
-                setupInitialConfiguration()
+        Group {
+            if firebaseManager.isAuthenticated {
+                // 主应用界面（Main App UI）
+                MainAppView()
+            } else {
+                // 统一认证视图（Unified Auth View）
+                UnifiedAuthView(firebaseManager: firebaseManager)
             }
-            .sheet(isPresented: $showOnboarding) {
-                OnboardingView(isPresented: $showOnboarding)
-            }
-            .sheet(isPresented: $showDualTrackWelcome) {
-                DualTrackWelcomeView(isPresented: $showDualTrackWelcome, interactionService: interactionService)
-            }
-            .sheet(isPresented: $showFreeTierOnboarding) {
-                FreeTierOnboardingView(isPresented: $showFreeTierOnboarding)
-            }
+        }
+        .onAppear {
+            setupInitialConfiguration()
+        }
+        .sheet(isPresented: $showOnboarding) {
+            OnboardingView(isPresented: $showOnboarding)
+        }
+        .sheet(isPresented: $showDualTrackWelcome) {
+            DualTrackWelcomeView(isPresented: $showDualTrackWelcome, interactionService: interactionService)
+        }
+        .sheet(isPresented: $showFreeTierOnboarding) {
+            FreeTierOnboardingView(isPresented: $showFreeTierOnboarding)
+        }
     }
     
     private var shouldShowOnboarding: Bool {
