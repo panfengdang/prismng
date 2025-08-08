@@ -26,9 +26,9 @@ class FirestoreRealtimeSyncService: ObservableObject {
     private let syncQueue = DispatchQueue(label: "firestore.sync", qos: .userInitiated)
     
     // Collection paths
-    private let thoughtNodesCollection = "thoughtNodes"
-    private let connectionsCollection = "connections"
-    private let userConfigCollection = "userConfig"
+    private let thoughtNodesCollection = FirebaseCollections.thoughtNodes
+    private let connectionsCollection = FirebaseCollections.connections
+    private let userConfigCollection = FirebaseCollections.userConfigurations
     private let aiAnalysisCollection = "aiAnalysis"
     
     init(firebaseManager: FirebaseManager = FirebaseManager.shared) {

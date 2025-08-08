@@ -11,7 +11,7 @@ import Foundation
 class RealLLMService {
     
     // MARK: - Properties
-    private let apiKey: String
+    private var apiKey: String
     private let baseURL: String
     private let session = URLSession.shared
     private let maxRetries = 3
@@ -19,12 +19,17 @@ class RealLLMService {
     
     // MARK: - Initialization
     init() {
-        // Load API key from environment or keychain
-        self.apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? ""
+        // Load API key: BYOK from Keychain when enabled, else env var
+        let flags = FeatureFlags.shared
+        if flags.enableBYOK, let key = try? KeychainService().getOpenAIAPIKey(), let keyUnwrapped = key, !keyUnwrapped.isEmpty {
+            self.apiKey = keyUnwrapped
+        } else {
+            self.apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? ""
+        }
         self.baseURL = "https://api.openai.com/v1"
         
         if apiKey.isEmpty {
-            print("⚠️ OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
+            AppLogger.log("OpenAI API key not set (BYOK disabled or missing).", category: .ai, type: .error)
         }
     }
     

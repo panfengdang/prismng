@@ -28,6 +28,7 @@ struct SettingsView: View {
             interactionModeSection
             cognitiveGearSection
             aiQuotaSection
+            aiRoutingSection
             growthOptimizationSection
             cloudSyncSection
             realtimeSyncSection
@@ -208,6 +209,33 @@ struct SettingsView: View {
     
     private var cloudSyncSection: some View {
         CloudSyncSettingsView(syncManager: cloudSyncManager)
+    }
+
+    private var aiRoutingSection: some View {
+        Section {
+            Toggle("启用 BYOK（自带API密钥）", isOn: Binding(
+                get: { FeatureFlags.shared.enableBYOK },
+                set: { UserDefaults.standard.set($0, forKey: "ff.enableBYOK") }
+            ))
+            
+            Toggle("优先云函数代理（官方额度）", isOn: Binding(
+                get: { FeatureFlags.shared.useCloudProxyForLLM },
+                set: { UserDefaults.standard.set($0, forKey: "ff.useCloudProxyForLLM") }
+            ))
+            
+            NavigationLink {
+                BYOKKeyEntryView()
+                    .navigationTitle("API 密钥")
+                    .navigationBarTitleDisplayMode(.inline)
+            } label: {
+                Label("管理 OpenAI API Key", systemImage: "key.fill")
+            }
+        } header: {
+            Text("AI 路由与密钥")
+        } footer: {
+            Text("默认通过云函数代理调用官方额度。开启 BYOK 后，改为使用你在设备 Keychain 中保存的 OpenAI API Key。")
+                .font(.caption)
+        }
     }
     
     private var growthOptimizationSection: some View {
